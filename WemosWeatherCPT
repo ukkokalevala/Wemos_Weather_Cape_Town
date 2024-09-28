@@ -1,0 +1,110 @@
+#include <ESP8266WiFi.h>  // Wi-Fi library for ESP8266
+#include <ESP8266HTTPClient.h>  // HTTP client
+#include <WiFiClientSecure.h>  // For HTTPS connections
+#include <ArduinoJson.h>  // JSON parsing
+#include <Wire.h>
+#include <LiquidCrystal_PCF8574.h>
+
+const char* ssid = "Antonelli";
+const char* password = "maomao1206";
+
+// OpenWeatherMap API endpoint
+const char* apiEndpoint = "https://api.openweathermap.org/data/2.5/weather";
+const char* apiKey = "ee625faf28370df7f2f962c0e57d32e4";  // Replace with your OpenWeatherMap API Key
+
+// Coordinates for Cape Town, South Africa
+const char* lat = "-33.92";  // Latitude for Cape Town
+const char* lon = "18.42";   // Longitude for Cape Town
+
+// Initialize the LCD with I2C address
+LiquidCrystal_PCF8574 lcd(0x27);  // Adjust I2C address if needed
+
+void setup() {
+  Serial.begin(115200);
+
+  // Initialize the LCD
+  lcd.begin(16, 2);  // Set LCD to 16 columns and 2 rows
+  lcd.setBacklight(255);
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("Fetching weather...");
+
+  // Connect to Wi-Fi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.println("Connecting to WiFi...");
+    lcd.setCursor(0, 1);
+    lcd.print("Connecting...");
+  }
+  Serial.println("Connected to WiFi");
+  lcd.clear();
+  lcd.setCursor(0, 1);
+  lcd.print("WiFi Connected");
+}
+
+void loop() {
+  if (WiFi.status() == WL_CONNECTED) {
+    WiFiClientSecure client;
+    client.setInsecure();  // Skip SSL certificate validation for testing
+
+    // Construct API URL
+    String url = String(apiEndpoint) + "?lat=" + lat + "&lon=" + lon + "&appid=" + String(apiKey) + "&units=metric";
+    Serial.println("Requesting URL: " + url);
+
+    HTTPClient http;
+    http.begin(client, url);  // HTTPS request
+    int httpCode = http.GET();
+
+    // Check HTTP request result
+    if (httpCode > 0) {
+      Serial.print("HTTP Response code: ");
+      Serial.println(httpCode);
+
+      if (httpCode == HTTP_CODE_OK) {
+        String payload = http.getString();
+        Serial.println("Payload received: ");
+        Serial.println(payload);  // Print the full response
+
+        // Parse JSON response
+        DynamicJsonDocument doc(2048);  // Increased buffer size
+        DeserializationError error = deserializeJson(doc, payload);
+
+        if (error) {
+          Serial.print("JSON Deserialization failed: ");
+          Serial.println(error.c_str());
+          return;
+        }
+
+        // Extract weather information
+        double temperature = doc["main"]["temp"];
+        const char* description = doc["weather"][0]["description"];
+
+        // Display weather info on LCD
+        lcd.clear();
+        lcd.setCursor(0, 0);
+        lcd.print("Cape Town, SA");  // Display city and country
+
+        lcd.setCursor(0, 1);
+        lcd.print(String(temperature, 1));  // Display temperature
+        lcd.print("C, ");
+        lcd.print(description);  // Display weather description
+
+        Serial.println("Temperature: " + String(temperature));
+        Serial.println("Weather: " + String(description));
+
+      } else {
+        Serial.println("Non-OK HTTP response");
+      }
+
+    } else {
+      Serial.print("HTTP Request failed, error code: ");
+      Serial.println(httpCode);
+    }
+
+    http.end();
+  }
+
+  delay(60000);  // Wait for 1 minute before the next request
+}
