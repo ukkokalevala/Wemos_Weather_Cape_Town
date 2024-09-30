@@ -10,7 +10,7 @@ const char* password = "maomao1206";
 
 // OpenWeatherMap API endpoint
 const char* apiEndpoint = "https://api.openweathermap.org/data/2.5/weather";
-const char* apiKey = "ee625faf28370df7f2f962c0e57d32e4";  // Replace with your OpenWeatherMap API Key
+const char* apiKey = "YOUR_API_KEY";  // Replace with your OpenWeatherMap API Key
 
 // Coordinates for Cape Town, South Africa
 const char* lat = "-33.92";  // Latitude for Cape Town
