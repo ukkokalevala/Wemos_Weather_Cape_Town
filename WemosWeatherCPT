@@ -5,8 +5,8 @@
 #include <Wire.h>
 #include <LiquidCrystal_PCF8574.h>
 
-const char* ssid = "Antonelli";
-const char* password = "maomao1206";
+const char* ssid = "YOUR_SSID";
+const char* password = "YOUR_PASSWORD";
 
 // OpenWeatherMap API endpoint
 const char* apiEndpoint = "https://api.openweathermap.org/data/2.5/weather";
